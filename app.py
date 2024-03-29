@@ -1,7 +1,11 @@
-import streamlit as st
+import sys
+import logging
 import asyncio
+from flask import Flask, request, jsonify
 from pysitemap import crawler
 from pysitemap.parsers.lxml_parser import Parser
+
+app = Flask(__name__)
 
 files_to_ignore = [
     ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp", ".bmp", ".tif", ".tiff",
@@ -23,19 +27,16 @@ def generate_sitemap(url):
         parser=Parser,
     )
 
-def main():
-    st.title("Sitemap Generator")
+@app.route('/api/sitemap')
+def get_sitemap():
+    url = request.args.get('url')
+    if not url:
+        return jsonify({"error": "URL parameter is missing"}), 400
 
-    url = st.text_input("Enter URL")
-    if st.button("Generate Sitemap"):
-        if not url:
-            st.error("URL parameter is missing")
-        else:
-            generate_sitemap(url)
-            with open("sitemap.xml", "r") as file:
-                sitemap_content = file.read()
-            st.success("Sitemap Generated Successfully!")
-            st.write(sitemap_content)
+    generate_sitemap(url)
+    with open("sitemap.xml", "r") as file:
+        sitemap_content = file.read()
+    return sitemap_content, 200
 
 if __name__ == "__main__":
-    main()
+    app.run(debug=True)
